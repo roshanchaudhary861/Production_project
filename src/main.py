@@ -1,37 +1,53 @@
+# 🔹 Import modules
 from data_preprocessing import load_data, clean_data
 from feature_engineering import create_features, create_trend_label, select_features
-from train_models import prepare_data, train_models, save_models
+from train_models import (
+    prepare_data,
+    train_models,
+    save_models,
+    cross_validate_models,
+    plot_cv_results
+)
 from evaluate_model import evaluate
 
 
 def main():
-    # 1. Load dataset
+    print("🚀 Starting Habit Trend ML Pipeline...\n")
+
+    # 🔹 Step 1: Load data
     df = load_data("data/dailyActivity_merged.csv")
 
-    # 2. Clean dataset
+    # 🔹 Step 2: Clean data
     df = clean_data(df)
 
-    # 3. Create new features
+    # 🔹 Step 3: Feature engineering
     df = create_features(df)
-
-    # 4. Create target variable (VERY IMPORTANT)
     df = create_trend_label(df)
 
-    # 5. Select features and target
-    X, y, features_names = select_features(df)
+    # 🔹 Step 4: Select features
+    X, y, feature_names = select_features(df)
 
-    # 6. Split + scale data
+    # 🔹 Step 5: Prepare data (split + scale)
     X_train, X_test, y_train, y_test = prepare_data(X, y)
 
-    # 7. Train models
+    # 🔹 Step 6: Train models
     models = train_models(X_train, y_train)
 
-    # 8. Save models
+    # 🔹 Step 7: Cross-validation
+    print("\n📊 Running Cross-Validation...")
+    cv_results = cross_validate_models(models, X, y)
+    plot_cv_results(cv_results)
+
+    # 🔹 Step 8: Evaluate models
+    print("\n📈 Evaluating Models...")
+    evaluate(models, X_test, y_test, feature_names)
+
+    # 🔹 Step 9: Save models
     save_models(models)
 
-    # 9. Evaluate models
-    evaluate(models, X_test, y_test, X.columns)
+    print("\n✅ Pipeline completed successfully!")
 
 
+# 🔹 Run program
 if __name__ == "__main__":
     main()
