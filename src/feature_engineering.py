@@ -1,3 +1,7 @@
+import pandas as pd
+
+
+# 🔹 Create new features
 def create_features(df):
     # Total activity minutes
     df['total_activity'] = (
@@ -12,34 +16,48 @@ def create_features(df):
     return df
 
 
-# 🔥 Create target variable (Trend)
+# 🔹 Create target variable (Trend) WITHOUT DATA LEAKAGE
 def create_trend_label(df):
-    def label(row):
-        if row['TotalSteps'] < 5000:
-            return "Declining"
-        elif row['TotalSteps'] < 10000:
-            return "Stable"
-        else:
-            return "Improving"
+    # Convert date to datetime (important)
+    df['ActivityDate'] = pd.to_datetime(df['ActivityDate'])
 
-    df['Trend'] = df.apply(label, axis=1)
+    # Sort by user and date
+    df = df.sort_values(by=['Id', 'ActivityDate'])
+
+    # Next day steps
+    df['next_steps'] = df.groupby('Id')['TotalSteps'].shift(-1)
+
+    # Step difference (future - current)
+    df['step_change'] = df['next_steps'] - df['TotalSteps']
+
+    # Create Trend label
+    def label_trend(x):
+        if x > 1000:
+            return 'Improving'
+        elif x < -1000:
+            return 'Declining'
+        else:
+            return 'Stable'
+
+    df['Trend'] = df['step_change'].apply(label_trend)
+
+    # Drop rows where next_steps is NaN (last day per user)
+    df = df.dropna()
 
     return df
 
 
+# 🔹 Select features and target
 def select_features(df):
-    # Input features
     features = [
         'TotalSteps',
         'Calories',
         'VeryActiveMinutes',
-        'SedentaryMinutes', 
+        'SedentaryMinutes',
         'activity_ratio'
     ]
 
     X = df[features]
-
-    # Target variable
     y = df['Trend']
 
-    return X, y
+    return X, y, features

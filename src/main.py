@@ -18,7 +18,7 @@ def main():
     df = create_trend_label(df)
 
     # 5. Select features and target
-    X, y = select_features(df)
+    X, y, features_names = select_features(df)
 
     # 6. Split + scale data
     X_train, X_test, y_train, y_test = prepare_data(X, y)
